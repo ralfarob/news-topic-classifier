@@ -95,6 +95,23 @@ python src/predict.py --input-csv data/sample_news.csv
 python src/predict.py --input-csv data/sample_news.csv --output-csv data/sample_news_predictions.csv
 ```
 
+Show top-k scores (single text):
+
+```powershell
+python src/predict.py --text "Government announces a new budget plan" --show-scores --top-k 3
+```
+
+Show top-k scores in batch CSV output:
+
+```powershell
+python src/predict.py --input-csv data/sample_news.csv --show-scores --top-k 3
+```
+
+When score output is enabled:
+- models with predict_proba use true probabilities
+- models with decision_function (for example LinearSVC) use softmax-normalized margins
+- batch output adds predicted_score and top_k_rankings columns
+
 ## Metrics Summary
 
 ```powershell

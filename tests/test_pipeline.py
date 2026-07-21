@@ -73,6 +73,41 @@ def test_predict_single_text() -> None:
     assert "Prediction:" in result.stdout
 
 
+def test_predict_single_text_with_scores() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    model_path = repo_root / "models" / "news_topic_model.joblib"
+
+    if not model_path.exists():
+        train_result = subprocess.run(
+            [sys.executable, "src/train.py"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert train_result.returncode == 0, train_result.stderr
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "src/predict.py",
+            "--text",
+            "Government approves new fiscal reform",
+            "--show-scores",
+            "--top-k",
+            "2",
+        ],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Prediction:" in result.stdout
+    assert "Top scores:" in result.stdout
+
+
 def test_predict_batch_from_csv() -> None:
     # Ensures CSV batch mode writes output with predicted_topic column.
     repo_root = Path(__file__).resolve().parents[1]
@@ -117,6 +152,61 @@ def test_predict_batch_from_csv() -> None:
 
         content = output_path.read_text(encoding="utf-8")
         assert "predicted_topic" in content
+    finally:
+        if input_path.exists():
+            input_path.unlink()
+        if output_path.exists():
+            output_path.unlink()
+
+
+def test_predict_batch_from_csv_with_scores() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    model_path = repo_root / "models" / "news_topic_model.joblib"
+
+    if not model_path.exists():
+        train_result = subprocess.run(
+            [sys.executable, "src/train.py"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert train_result.returncode == 0, train_result.stderr
+
+    input_path = repo_root / "tests" / "tmp_news_input_scores.csv"
+    output_path = repo_root / "tests" / "tmp_news_output_scores.csv"
+    input_path.write_text(
+        "text\nParliament votes on trade bill\nStartup launches a new processor\n",
+        encoding="utf-8",
+    )
+
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "src/predict.py",
+                "--input-csv",
+                str(input_path),
+                "--output-csv",
+                str(output_path),
+                "--show-scores",
+                "--top-k",
+                "2",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "Included top-2 scores in output CSV" in result.stdout
+        assert output_path.exists()
+
+        content = output_path.read_text(encoding="utf-8")
+        assert "predicted_topic" in content
+        assert "predicted_score" in content
+        assert "top_k_rankings" in content
     finally:
         if input_path.exists():
             input_path.unlink()
