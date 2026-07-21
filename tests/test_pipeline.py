@@ -143,3 +143,4 @@ def test_metrics_summary_cli() -> None:
     assert "Selected model:" in result.stdout
     assert "CV mean accuracy by model:" in result.stdout
     assert "Per-class metrics:" in result.stdout
+    assert "Confusion matrix (rows=true, cols=pred):" in result.stdout

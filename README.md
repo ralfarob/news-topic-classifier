@@ -74,6 +74,12 @@ Optional custom metrics path:
 python src/metrics_summary.py --metrics models/metrics.json
 ```
 
+The summary includes:
+- selected model and holdout accuracy
+- CV mean accuracy by model
+- per-class precision/recall/F1/support
+- confusion matrix table (rows=true labels, columns=predicted labels)
+
 ## Run Tests
 
 ```powershell

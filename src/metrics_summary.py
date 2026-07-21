@@ -9,6 +9,32 @@ def _safe_float(value: object) -> float:
     return 0.0
 
 
+def _print_confusion_matrix(labels: list[str], matrix: list[list[int]]) -> None:
+    if not labels or not matrix:
+        print("Confusion matrix: unavailable")
+        return
+
+    if len(matrix) != len(labels) or any(len(row) != len(labels) for row in matrix):
+        print("Confusion matrix: invalid shape")
+        return
+
+    row_label_width = max(len("true\\pred"), max(len(label) for label in labels))
+    value_width = max(3, max(len(str(value)) for row in matrix for value in row))
+
+    print("Confusion matrix (rows=true, cols=pred):")
+    header = "true\\pred".rjust(row_label_width)
+    for label in labels:
+        header += f" | {label.rjust(value_width)}"
+    print(header)
+    print("-" * len(header))
+
+    for label, row in zip(labels, matrix):
+        line = label.rjust(row_label_width)
+        for value in row:
+            line += f" | {str(value).rjust(value_width)}"
+        print(line)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Print a compact summary from metrics.json"
@@ -34,6 +60,7 @@ def main() -> None:
     cv_scores = payload.get("cv_scores", {})
     report = payload.get("classification_report", {})
     labels = payload.get("labels", [])
+    confusion_payload = payload.get("confusion_matrix", {})
 
     print("Evaluation Summary")
     print("==================")
@@ -68,6 +95,23 @@ def main() -> None:
             f"- {label_key}: precision={precision:.2f} recall={recall:.2f} "
             f"f1={f1:.2f} support={support}"
         )
+
+    print("")
+    cm_labels = []
+    cm_matrix = []
+    if isinstance(confusion_payload, dict):
+        raw_labels = confusion_payload.get("labels", [])
+        raw_matrix = confusion_payload.get("matrix", [])
+        if isinstance(raw_labels, list):
+            cm_labels = [str(item) for item in raw_labels]
+        if isinstance(raw_matrix, list):
+            cm_matrix = [
+                [int(_safe_float(value)) for value in row]
+                for row in raw_matrix
+                if isinstance(row, list)
+            ]
+
+    _print_confusion_matrix(cm_labels, cm_matrix)
 
 
 if __name__ == "__main__":
