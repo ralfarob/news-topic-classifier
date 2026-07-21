@@ -62,6 +62,7 @@ def main() -> None:
     selected_model = str(payload.get("selected_model", "unknown"))
     accuracy = _safe_float(payload.get("accuracy", 0.0))
     cv_scores = payload.get("cv_scores", {})
+    best_params = payload.get("best_params", {})
     report = payload.get("classification_report", {})
     labels = payload.get("labels", [])
     confusion_payload = payload.get("confusion_matrix", {})
@@ -72,20 +73,25 @@ def main() -> None:
     print(f"Holdout accuracy: {accuracy:.4f}")
     print("")
 
-    print("CV mean accuracy by model:")
+    print("CV mean/std accuracy by model:")
     # Build a tiny leaderboard sorted by CV mean score.
-    rows: list[tuple[str, float]] = []
+    rows: list[tuple[str, float, float]] = []
     if isinstance(cv_scores, dict):
         for model_name, scores in cv_scores.items():
             if isinstance(scores, list) and scores:
                 mean_score = sum(float(v) for v in scores) / len(scores)
+                variance = sum((float(v) - mean_score) ** 2 for v in scores) / len(scores)
+                std_score = variance**0.5
             else:
                 mean_score = 0.0
-            rows.append((str(model_name), mean_score))
+                std_score = 0.0
+            rows.append((str(model_name), mean_score, std_score))
     rows.sort(key=lambda item: item[1], reverse=True)
 
-    for model_name, mean_score in rows:
-        print(f"- {model_name}: {mean_score:.4f}")
+    for model_name, mean_score, std_score in rows:
+        print(f"- {model_name}: mean={mean_score:.4f} std={std_score:.4f}")
+        if isinstance(best_params, dict) and model_name in best_params:
+            print(f"  best params: {best_params[model_name]}")
 
     print("")
     print("Per-class metrics:")

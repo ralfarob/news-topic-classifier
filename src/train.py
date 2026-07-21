@@ -13,7 +13,12 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
-from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
+from sklearn.model_selection import (
+    GridSearchCV,
+    RepeatedStratifiedKFold,
+    cross_val_score,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
@@ -42,6 +47,22 @@ def build_pipelines() -> dict[str, Pipeline]:
     }
 
 
+def build_param_grids() -> dict[str, dict[str, list[object]]]:
+    # Keep grids intentionally small to improve quality without slowing training too much.
+    return {
+        "LogisticRegression": {
+            "tfidf__ngram_range": [(1, 1), (1, 2)],
+            "tfidf__min_df": [1, 2],
+            "clf__C": [0.5, 1.0, 2.0],
+        },
+        "LinearSVC": {
+            "tfidf__ngram_range": [(1, 1), (1, 2)],
+            "tfidf__min_df": [1, 2],
+            "clf__C": [0.5, 1.0, 2.0],
+        },
+    }
+
+
 def main() -> None:
     data_path = Path("data/sample_news.csv")
     models_dir = Path("models")
@@ -66,24 +87,53 @@ def main() -> None:
     )
 
     pipelines = build_pipelines()
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    param_grids = build_param_grids()
+    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=42)
 
-    # Evaluate each candidate with the same cross-validation strategy.
+    # Evaluate each candidate with repeated CV for a more stable estimate on small data.
     model_scores: dict[str, list[float]] = {}
-    print("Model comparison with cross-validation (5-fold):")
+    model_best_params: dict[str, dict[str, object]] = {}
+    tuned_pipelines: dict[str, Pipeline] = {}
+
+    print("Model comparison with repeated cross-validation (5 folds x 3 repeats):")
     for model_name, pipeline in pipelines.items():
-        cv_scores = cross_val_score(pipeline, x, y, cv=cv, scoring="accuracy")
+        search = GridSearchCV(
+            pipeline,
+            param_grid=param_grids[model_name],
+            cv=cv,
+            scoring="accuracy",
+            n_jobs=-1,
+        )
+        search.fit(x_train, y_train)
+
+        # Re-score the tuned estimator to retain explicit fold scores for reporting/export.
+        tuned_pipeline = search.best_estimator_
+        cv_scores = cross_val_score(
+            tuned_pipeline,
+            x_train,
+            y_train,
+            cv=cv,
+            scoring="accuracy",
+            n_jobs=-1,
+        )
+
+        tuned_pipelines[model_name] = tuned_pipeline
         model_scores[model_name] = cv_scores.tolist()
+        model_best_params[model_name] = {
+            key: value for key, value in search.best_params_.items()
+        }
+
         print(f"- {model_name} mean: {cv_scores.mean():.4f}")
         print(f"  std: {cv_scores.std():.4f}")
-        print("  folds:", ", ".join(f"{score:.4f}" for score in cv_scores))
+        print(f"  scores: {len(cv_scores)} folds")
+        print(f"  best params: {search.best_params_}")
 
     # Pick the model with the highest average CV accuracy.
     # Using explicit average keeps selection logic transparent for beginners.
     best_model_name = max(
         model_scores, key=lambda key: sum(model_scores[key]) / len(model_scores[key])
     )
-    best_pipeline = pipelines[best_model_name]
+    best_pipeline = tuned_pipelines[best_model_name]
     print(f"\nSelected model: {best_model_name}\n")
 
     # Train selected model on train split and evaluate on holdout split.
@@ -114,6 +164,21 @@ def main() -> None:
         "selected_model": best_model_name,
         "accuracy": round(float(accuracy), 4),
         "cv_scores": model_scores,
+        "cv_summary": {
+            model_name: {
+                "mean": round(float(sum(scores) / len(scores)), 4),
+                "std": round(
+                    float(pd.Series(scores, dtype="float64").std(ddof=0)), 4
+                ),
+            }
+            for model_name, scores in model_scores.items()
+        },
+        "best_params": model_best_params,
+        "data_summary": {
+            "dataset_rows": int(len(df)),
+            "train_rows": int(len(x_train)),
+            "test_rows": int(len(x_test)),
+        },
         "labels": labels_sorted,
         "classification_report": report_dict,
         "confusion_matrix": {

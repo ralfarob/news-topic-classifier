@@ -11,6 +11,14 @@ text,label
 "Congress votes on education reform bill",politics
 "Prime minister addresses parliament on security",politics
 "Diplomats negotiate climate policy agreement",politics
+"Regional governor proposes anti corruption package",politics
+"Lawmakers debate pension reform timeline",politics
+"Election commission updates voting procedures",politics
+"Government coalition negotiates tax incentives",politics
+"Parliamentary bloc backs judicial reform plan",politics
+"Foreign ministry responds to border dispute",politics
+"Senators question defense procurement contract",politics
+"City council approves public safety ordinance",politics
 "Local team wins the championship final",sports
 "Star player scores a hat trick in derby",sports
 "Coach announces training plan for next season",sports
@@ -23,6 +31,14 @@ text,label
 "Fans celebrate dramatic comeback in cup final",sports
 "Goalkeeper saves penalty in extra time",sports
 "Baseball manager confirms lineup changes",sports
+"Cyclist wins mountain stage in grand tour",sports
+"Volleyball team sweeps rival in straight sets",sports
+"Rookie striker nets winner on debut",sports
+"Olympic committee reveals qualification rules",sports
+"Cricket side posts record chase under lights",sports
+"Swimming champion sets new continental mark",sports
+"Referee report confirms late offside decision",sports
+"Athletics federation names squad for world meet",sports
 "New smartphone chip improves battery efficiency",technology
 "Software company releases AI coding assistant",technology
 "Cybersecurity researchers report a major vulnerability",technology
@@ -35,6 +51,14 @@ text,label
 "Data center upgrades servers for faster processing",technology
 "Researchers build neural network for medical imaging",technology
 "Semiconductor company presents new graphics processor",technology
+"Robotics lab demonstrates warehouse automation system",technology
+"Browser update patches critical security flaw",technology
+"Biotech startup deploys AI for drug discovery",technology
+"Chipmaker announces next generation fabrication node",technology
+"Platform team rolls out privacy controls dashboard",technology
+"Telecom provider expands nationwide fiber network",technology
+"University releases benchmark for language models",technology
+"Ecommerce app introduces real time recommendation engine",technology
 "Stock market rises after earnings surprise",business
 "Retail chain reports strong quarterly revenue",business
 "Central bank signals possible rate cut",business
@@ -47,3 +71,11 @@ text,label
 "Real estate developer secures financing for new project",business
 "Consumer spending increases in latest economic report",business
 "Exporters welcome weaker currency for overseas sales",business
+"Logistics firm raises guidance after holiday demand",business
+"Insurance provider reports growth in premium income",business
+"Automaker plans new plant to increase production",business
+"Hotel chain forecasts stronger summer bookings",business
+"Food supplier signs multiyear contract with retailers",business
+"Port operator invests in cargo terminal expansion",business
+"Private equity fund acquires majority stake in startup",business
+"Pharmaceutical company revises full year outlook",business

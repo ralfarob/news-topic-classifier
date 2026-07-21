@@ -1,6 +1,6 @@
 # Week 2: News Topic Classifier
 
-This project trains a multi-class text classifier for news topics using TF-IDF and compares Logistic Regression vs LinearSVC.
+This project trains a multi-class text classifier for news topics using TF-IDF, tunes Logistic Regression and LinearSVC with grid search, and selects the best model with repeated cross-validation.
 
 ## Topics
 - politics
@@ -17,7 +17,7 @@ This project trains a multi-class text classifier for news topics using TF-IDF a
 - pytest
 
 ## Project Structure
-- data/sample_news.csv: sample labeled dataset (text, label)
+- data/sample_news.csv: expanded labeled dataset (text, label)
 - src/data_quality_check.py: dataset validator (class balance and duplicate checks)
 - src/preprocess.py: text cleaning helpers
 - src/train.py: model comparison, training, and artifact export
@@ -45,8 +45,14 @@ Training now runs a fail-fast data quality check first and stops if it finds:
 - duplicate texts (case/space-insensitive)
 - empty text rows or missing required columns
 
+Model selection strategy:
+- repeated stratified cross-validation (5 folds x 3 repeats)
+- small grid search for TF-IDF and model hyperparameters
+- best model chosen by highest CV mean accuracy
+
 Expected output:
-- cross-validation comparison per model
+- repeated cross-validation mean/std per model
+- best hyperparameters per model
 - selected best model
 - accuracy and classification report
 - models/news_topic_model.joblib
@@ -56,6 +62,9 @@ Expected output:
 metrics.json now stores:
 - selected model and accuracy
 - full CV scores per model
+- CV mean/std summary per model
+- best hyperparameters per model
+- dataset/train/test row counts
 - per-class classification report
 - confusion matrix labels and numeric matrix values
 
@@ -100,7 +109,8 @@ python src/metrics_summary.py --metrics models/metrics.json
 
 The summary includes:
 - selected model and holdout accuracy
-- CV mean accuracy by model
+- CV mean/std accuracy by model
+- best hyperparameters by model
 - per-class precision/recall/F1/support
 - confusion matrix table (rows=true labels, columns=predicted labels)
 

@@ -18,7 +18,7 @@ def test_train_creates_artifacts() -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    assert "Model comparison with cross-validation (5-fold):" in result.stdout
+    assert "Model comparison with repeated cross-validation (5 folds x 3 repeats):" in result.stdout
     assert "Selected model:" in result.stdout
     assert "Accuracy:" in result.stdout
     assert (repo_root / "models" / "news_topic_model.joblib").exists()
@@ -32,6 +32,9 @@ def test_train_creates_artifacts() -> None:
     assert "selected_model" in metrics
     assert "accuracy" in metrics
     assert "cv_scores" in metrics
+    assert "cv_summary" in metrics
+    assert "best_params" in metrics
+    assert "data_summary" in metrics
     assert "labels" in metrics
     assert "classification_report" in metrics
     assert "confusion_matrix" in metrics
@@ -147,7 +150,8 @@ def test_metrics_summary_cli() -> None:
     assert result.returncode == 0, result.stderr
     assert "Evaluation Summary" in result.stdout
     assert "Selected model:" in result.stdout
-    assert "CV mean accuracy by model:" in result.stdout
+    assert "CV mean/std accuracy by model:" in result.stdout
+    assert "best params:" in result.stdout
     assert "Per-class metrics:" in result.stdout
     assert "Confusion matrix (rows=true, cols=pred):" in result.stdout
 
