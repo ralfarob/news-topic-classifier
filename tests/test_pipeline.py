@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import subprocess
 import sys
 
@@ -20,6 +21,18 @@ def test_train_creates_artifacts() -> None:
     assert (repo_root / "models" / "news_topic_model.joblib").exists()
     assert (repo_root / "models" / "confusion_matrix.png").exists()
     assert (repo_root / "models" / "metrics.json").exists()
+
+    metrics_path = repo_root / "models" / "metrics.json"
+    with metrics_path.open("r", encoding="utf-8") as f:
+        metrics = json.load(f)
+
+    assert "selected_model" in metrics
+    assert "accuracy" in metrics
+    assert "cv_scores" in metrics
+    assert "labels" in metrics
+    assert "classification_report" in metrics
+    assert "confusion_matrix" in metrics
+    assert "matrix" in metrics["confusion_matrix"]
 
 
 def test_predict_single_text() -> None:

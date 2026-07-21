@@ -5,7 +5,12 @@ import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+)
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
@@ -72,10 +77,13 @@ def main() -> None:
 
     accuracy = accuracy_score(y_test, preds)
     labels_sorted = sorted(y.unique())
+    report_dict = classification_report(y_test, preds, zero_division=0, output_dict=True)
 
     print("Accuracy:", f"{accuracy:.4f}")
     print("\nClassification Report:\n")
     print(classification_report(y_test, preds, zero_division=0))
+
+    cm = confusion_matrix(y_test, preds, labels=labels_sorted)
 
     disp = ConfusionMatrixDisplay.from_predictions(
         y_test, preds, display_labels=labels_sorted
@@ -88,6 +96,12 @@ def main() -> None:
         "selected_model": best_model_name,
         "accuracy": round(float(accuracy), 4),
         "cv_scores": model_scores,
+        "labels": labels_sorted,
+        "classification_report": report_dict,
+        "confusion_matrix": {
+            "labels": labels_sorted,
+            "matrix": cm.tolist(),
+        },
     }
     with (models_dir / "metrics.json").open("w", encoding="utf-8") as f:
         json.dump(metrics_payload, f, indent=2)
