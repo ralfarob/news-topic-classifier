@@ -246,6 +246,38 @@ def test_metrics_summary_cli() -> None:
     assert "Confusion matrix (rows=true, cols=pred):" in result.stdout
 
 
+def test_model_info_cli() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    model_path = repo_root / "models" / "news_topic_model.joblib"
+    metrics_path = repo_root / "models" / "metrics.json"
+
+    if not model_path.exists() or not metrics_path.exists():
+        train_result = subprocess.run(
+            [sys.executable, "src/train.py"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert train_result.returncode == 0, train_result.stderr
+
+    result = subprocess.run(
+        [sys.executable, "src/model_info.py"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Model Artifact Info" in result.stdout
+    assert "Model type:" in result.stdout
+    assert "Pipeline steps:" in result.stdout
+    assert "Training Summary" in result.stdout
+    assert "Selected model:" in result.stdout
+    assert "Holdout accuracy:" in result.stdout
+
+
 def test_data_quality_check_cli_passes_for_sample_data() -> None:
     # Baseline dataset should pass the validator with default thresholds.
     repo_root = Path(__file__).resolve().parents[1]

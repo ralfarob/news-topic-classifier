@@ -23,6 +23,7 @@ This project trains a multi-class text classifier for news topics using TF-IDF, 
 - src/train.py: model comparison, training, and artifact export
 - src/predict.py: single-text and batch CSV prediction
 - src/metrics_summary.py: compact evaluation report from metrics.json
+- src/model_info.py: model artifact and training metadata inspector
 - tests/test_preprocess.py: unit tests for preprocessing
 - tests/test_pipeline.py: integration tests for train and predict
 
@@ -136,6 +137,25 @@ The summary includes:
 - best hyperparameters by model
 - per-class precision/recall/F1/support
 - confusion matrix table (rows=true labels, columns=predicted labels)
+
+## Model Info
+
+```powershell
+python src/model_info.py
+```
+
+Optional custom paths:
+
+```powershell
+python src/model_info.py --model models/news_topic_model.joblib --metrics models/metrics.json
+```
+
+The report includes:
+- model artifact type and pipeline steps
+- detected class labels
+- selected model and holdout accuracy
+- dataset/train/test row counts
+- CV summary and best params for selected model
 
 ## Run Tests
 
