@@ -80,6 +80,12 @@ Optional custom input and threshold:
 python src/data_quality_check.py --input-csv data/sample_news.csv --max-imbalance-ratio 2.0
 ```
 
+When validation fails, the checker now also prints:
+- class distribution summary
+- per-class deficit suggestions to rebalance classes
+- duplicate text previews (sample repeated rows)
+- concrete cleanup hints before retraining
+
 ## Predict
 
 Single text:

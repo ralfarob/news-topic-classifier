@@ -291,7 +291,12 @@ def test_data_quality_check_cli_fails_for_imbalanced_and_duplicate_data() -> Non
         assert result.returncode != 0
         assert "Data quality check failed:" in result.stdout
         assert "Class imbalance too high:" in result.stdout
+        assert "Class distribution:" in result.stdout
+        assert "Suggestion: add at least" in result.stdout
+        assert "Per-class deficit to match largest class:" in result.stdout
         assert "duplicate text rows" in result.stdout
+        assert "Duplicate example 1:" in result.stdout
+        assert "Suggestion: deduplicate repeated texts" in result.stdout
     finally:
         if input_path.exists():
             input_path.unlink()

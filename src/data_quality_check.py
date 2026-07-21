@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import argparse
+import math
 
 import pandas as pd
 
@@ -11,6 +12,7 @@ def validate_training_data(
     text_column: str = "text",
     label_column: str = "label",
     max_imbalance_ratio: float = 2.0,
+    max_duplicate_examples: int = 3,
 ) -> list[str]:
     # Return all issues found so callers can show one consolidated error.
     issues: list[str] = []
@@ -38,11 +40,18 @@ def validate_training_data(
     # 4) Class coverage/balance checks: avoid one-class or heavily skewed training.
     # Example: counts [30, 10] => ratio 3.0, which fails when threshold is 2.0.
     class_counts = labels.value_counts()
+    class_counts_view = ", ".join(
+        f"{label}={int(count)}" for label, count in class_counts.items()
+    )
+
     if len(class_counts) < 2:
         issues.append("At least two classes are required")
     else:
         min_count = int(class_counts.min())
         max_count = int(class_counts.max())
+        majority_label = str(class_counts.idxmax())
+        minority_label = str(class_counts.idxmin())
+
         if min_count == 0:
             issues.append("At least one class has zero samples")
         else:
@@ -52,6 +61,27 @@ def validate_training_data(
                     "Class imbalance too high: "
                     f"max/min={ratio:.2f} (threshold={max_imbalance_ratio:.2f})"
                 )
+
+                required_minority = math.ceil(max_count / max_imbalance_ratio)
+                deficit = max(0, required_minority - min_count)
+                issues.append(f"Class distribution: {class_counts_view}")
+                issues.append(
+                    "Suggestion: add at least "
+                    f"{deficit} samples to '{minority_label}' "
+                    f"(or reduce '{majority_label}') to satisfy the threshold"
+                )
+
+    if len(class_counts) >= 2:
+        target_count = int(class_counts.max())
+        deficits = [
+            f"{label}:+{target_count - int(count)}"
+            for label, count in class_counts.items()
+            if int(count) < target_count
+        ]
+        if deficits:
+            issues.append(
+                "Per-class deficit to match largest class: " + ", ".join(deficits)
+            )
 
     # 5) Duplicate detection after normalization.
     # "Breaking News" and "breaking   news" are treated as duplicates.
@@ -63,6 +93,26 @@ def validate_training_data(
         issues.append(
             f"Found {duplicate_count} duplicate text rows (case/space-insensitive)"
         )
+
+        duplicate_df = pd.DataFrame(
+            {
+                "normalized": normalized,
+                "original": texts,
+            }
+        )
+        duplicate_groups = (
+            duplicate_df[duplicate_mask]
+            .groupby("normalized", sort=False)["original"]
+            .apply(list)
+        )
+
+        for idx, group_values in enumerate(duplicate_groups.head(max_duplicate_examples), 1):
+            representative = str(group_values[0])
+            issues.append(
+                f"Duplicate example {idx}: '{representative}' appears {len(group_values)} times"
+            )
+
+        issues.append("Suggestion: deduplicate repeated texts before retraining")
 
     return issues
 
