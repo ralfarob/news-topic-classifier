@@ -1,3 +1,5 @@
+"""Integration tests for training, prediction, and reporting CLIs."""
+
 from pathlib import Path
 import json
 import subprocess
@@ -5,6 +7,7 @@ import sys
 
 
 def test_train_creates_artifacts() -> None:
+    # Runs full training and validates required output artifacts and metrics keys.
     repo_root = Path(__file__).resolve().parents[1]
     result = subprocess.run(
         [sys.executable, "src/train.py"],
@@ -36,6 +39,7 @@ def test_train_creates_artifacts() -> None:
 
 
 def test_predict_single_text() -> None:
+    # Ensures single-text prediction mode responds with a label.
     repo_root = Path(__file__).resolve().parents[1]
     model_path = repo_root / "models" / "news_topic_model.joblib"
 
@@ -67,6 +71,7 @@ def test_predict_single_text() -> None:
 
 
 def test_predict_batch_from_csv() -> None:
+    # Ensures CSV batch mode writes output with predicted_topic column.
     repo_root = Path(__file__).resolve().parents[1]
     model_path = repo_root / "models" / "news_topic_model.joblib"
 
@@ -117,6 +122,7 @@ def test_predict_batch_from_csv() -> None:
 
 
 def test_metrics_summary_cli() -> None:
+    # Confirms terminal summary output includes all expected report sections.
     repo_root = Path(__file__).resolve().parents[1]
     metrics_path = repo_root / "models" / "metrics.json"
 
@@ -147,6 +153,7 @@ def test_metrics_summary_cli() -> None:
 
 
 def test_data_quality_check_cli_passes_for_sample_data() -> None:
+    # Baseline dataset should pass the validator with default thresholds.
     repo_root = Path(__file__).resolve().parents[1]
     result = subprocess.run(
         [sys.executable, "src/data_quality_check.py"],
@@ -161,6 +168,7 @@ def test_data_quality_check_cli_passes_for_sample_data() -> None:
 
 
 def test_data_quality_check_cli_fails_for_imbalanced_and_duplicate_data() -> None:
+    # Synthetic dataset should trigger both imbalance and duplicate checks.
     repo_root = Path(__file__).resolve().parents[1]
     input_path = repo_root / "tests" / "tmp_bad_quality_news.csv"
     input_path.write_text(

@@ -1,3 +1,5 @@
+"""Dataset quality checks used before training."""
+
 from pathlib import Path
 import argparse
 
@@ -10,24 +12,31 @@ def validate_training_data(
     label_column: str = "label",
     max_imbalance_ratio: float = 2.0,
 ) -> list[str]:
+    # Return all issues found so callers can show one consolidated error.
     issues: list[str] = []
 
+    # 1) Schema check: ensure required columns exist before any other logic.
     required = {text_column, label_column}
     if not required.issubset(df.columns):
         missing = sorted(required - set(df.columns))
         issues.append(f"Missing required columns: {', '.join(missing)}")
         return issues
 
+    # Normalize raw values to strings and trim spaces for robust downstream checks.
     texts = df[text_column].astype(str).str.strip()
     labels = df[label_column].astype(str).str.strip()
 
+    # 2) Empty dataset check: model training cannot proceed with zero rows.
     if len(df) == 0:
         issues.append("Dataset is empty")
         return issues
 
+    # 3) Empty text check: blank rows add noise and can break quality expectations.
     if (texts == "").any():
         issues.append("Found empty text rows")
 
+    # 4) Class coverage/balance checks: avoid one-class or heavily skewed training.
+    # Example: counts [30, 10] => ratio 3.0, which fails when threshold is 2.0.
     class_counts = labels.value_counts()
     if len(class_counts) < 2:
         issues.append("At least two classes are required")
@@ -44,7 +53,10 @@ def validate_training_data(
                     f"max/min={ratio:.2f} (threshold={max_imbalance_ratio:.2f})"
                 )
 
+    # 5) Duplicate detection after normalization.
+    # "Breaking News" and "breaking   news" are treated as duplicates.
     normalized = texts.str.lower().str.replace(r"\s+", " ", regex=True)
+    # Duplicate detection ignores case and extra spaces to catch near-identical rows.
     duplicate_mask = normalized.duplicated(keep=False)
     duplicate_count = int(duplicate_mask.sum())
     if duplicate_count > 0:
@@ -70,6 +82,7 @@ def main() -> None:
         raise FileNotFoundError(f"Input CSV not found: {data_path}")
 
     df = pd.read_csv(data_path)
+    # CLI wrapper around shared validator used by training.
     issues = validate_training_data(
         df=df,
         text_column=args.text_column,

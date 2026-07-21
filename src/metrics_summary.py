@@ -1,9 +1,12 @@
+"""Terminal summary view for training metrics artifacts."""
+
 from pathlib import Path
 import argparse
 import json
 
 
 def _safe_float(value: object) -> float:
+    # Defensive cast for JSON values that may be missing or typed differently.
     if isinstance(value, (int, float)):
         return float(value)
     return 0.0
@@ -18,6 +21,7 @@ def _print_confusion_matrix(labels: list[str], matrix: list[list[int]]) -> None:
         print("Confusion matrix: invalid shape")
         return
 
+    # Compute dynamic widths so short and long labels align in a readable grid.
     row_label_width = max(len("true\\pred"), max(len(label) for label in labels))
     value_width = max(3, max(len(str(value)) for row in matrix for value in row))
 
@@ -69,6 +73,7 @@ def main() -> None:
     print("")
 
     print("CV mean accuracy by model:")
+    # Build a tiny leaderboard sorted by CV mean score.
     rows: list[tuple[str, float]] = []
     if isinstance(cv_scores, dict):
         for model_name, scores in cv_scores.items():
@@ -100,17 +105,20 @@ def main() -> None:
     cm_labels = []
     cm_matrix = []
     if isinstance(confusion_payload, dict):
+        # Read labels/matrix from the same structure exported by train.py.
         raw_labels = confusion_payload.get("labels", [])
         raw_matrix = confusion_payload.get("matrix", [])
         if isinstance(raw_labels, list):
             cm_labels = [str(item) for item in raw_labels]
         if isinstance(raw_matrix, list):
+            # Cast values defensively so malformed JSON does not crash output.
             cm_matrix = [
                 [int(_safe_float(value)) for value in row]
                 for row in raw_matrix
                 if isinstance(row, list)
             ]
 
+    # Render confusion matrix using the label order stored in metrics.json.
     _print_confusion_matrix(cm_labels, cm_matrix)
 
 

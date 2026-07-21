@@ -43,6 +43,7 @@ python src/train.py
 Training now runs a fail-fast data quality check first and stops if it finds:
 - class imbalance above threshold
 - duplicate texts (case/space-insensitive)
+- empty text rows or missing required columns
 
 Expected output:
 - cross-validation comparison per model
@@ -51,6 +52,12 @@ Expected output:
 - models/news_topic_model.joblib
 - models/confusion_matrix.png
 - models/metrics.json
+
+metrics.json now stores:
+- selected model and accuracy
+- full CV scores per model
+- per-class classification report
+- confusion matrix labels and numeric matrix values
 
 ## Data Quality Check
 
@@ -101,4 +108,10 @@ The summary includes:
 
 ```powershell
 pytest -q
+```
+
+VS Code task option:
+
+```powershell
+# Terminal > Run Task > Run tests
 ```

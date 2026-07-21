@@ -1,3 +1,5 @@
+"""Prediction CLI for single text and batch CSV scoring."""
+
 from pathlib import Path
 import argparse
 
@@ -8,6 +10,7 @@ from preprocess import clean_batch, clean_text
 
 
 def main() -> None:
+    # CLI flags support one-off prediction and dataset-level scoring.
     parser = argparse.ArgumentParser(description="Predict news topics from text or CSV")
     parser.add_argument("--text", help="Single text input")
     parser.add_argument("--input-csv", help="CSV file containing a text column")
@@ -23,6 +26,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Exactly one input mode must be provided.
     if bool(args.text) == bool(args.input_csv):
         raise ValueError("Provide exactly one of --text or --input-csv")
 
@@ -32,9 +36,11 @@ def main() -> None:
             f"Model file not found: {model_path}. Run src/train.py first."
         )
 
+    # Model artifact is a scikit-learn pipeline persisted with joblib.
     model = joblib.load(model_path)
 
     if args.text:
+        # Single text mode: clean one input and return one label.
         cleaned = clean_text(args.text)
         pred = str(model.predict([cleaned])[0])
         print(f"Prediction: {pred}")
@@ -50,12 +56,14 @@ def main() -> None:
             f"Column '{args.text_column}' not found in input CSV: {input_path}"
         )
 
+    # Batch mode: clean all rows, score, and append predicted_topic column.
     cleaned_batch = clean_batch(df[args.text_column].astype(str).tolist())
     preds = model.predict(cleaned_batch)
 
     result_df = df.copy()
     result_df["predicted_topic"] = preds
 
+    # If output path is omitted, create a sibling file named <input>_predictions.csv.
     output_path = (
         Path(args.output_csv)
         if args.output_csv

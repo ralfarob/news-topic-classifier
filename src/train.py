@@ -1,3 +1,5 @@
+"""Training pipeline for multi-class news topic classification."""
+
 from pathlib import Path
 import json
 
@@ -20,6 +22,7 @@ from preprocess import clean_batch
 
 
 def build_pipelines() -> dict[str, Pipeline]:
+    # Compare two linear models over the same TF-IDF feature space.
     return {
         "LogisticRegression": Pipeline(
             [
@@ -48,11 +51,13 @@ def main() -> None:
     if not {"text", "label"}.issubset(df.columns):
         raise ValueError("CSV must include 'text' and 'label' columns")
 
+    # Fail fast when dataset quality is not good enough for training.
     quality_issues = validate_training_data(df)
     if quality_issues:
         issue_list = "\n".join(f"- {issue}" for issue in quality_issues)
         raise ValueError(f"Dataset quality check failed:\n{issue_list}")
 
+    # Clean all texts before split so train/test and CV use identical preprocessing.
     x = clean_batch(df["text"].astype(str).tolist())
     y = df["label"].astype(str)
 
@@ -63,6 +68,7 @@ def main() -> None:
     pipelines = build_pipelines()
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
+    # Evaluate each candidate with the same cross-validation strategy.
     model_scores: dict[str, list[float]] = {}
     print("Model comparison with cross-validation (5-fold):")
     for model_name, pipeline in pipelines.items():
@@ -72,12 +78,15 @@ def main() -> None:
         print(f"  std: {cv_scores.std():.4f}")
         print("  folds:", ", ".join(f"{score:.4f}" for score in cv_scores))
 
+    # Pick the model with the highest average CV accuracy.
+    # Using explicit average keeps selection logic transparent for beginners.
     best_model_name = max(
         model_scores, key=lambda key: sum(model_scores[key]) / len(model_scores[key])
     )
     best_pipeline = pipelines[best_model_name]
     print(f"\nSelected model: {best_model_name}\n")
 
+    # Train selected model on train split and evaluate on holdout split.
     best_pipeline.fit(x_train, y_train)
     preds = best_pipeline.predict(x_test)
 
@@ -89,15 +98,18 @@ def main() -> None:
     print("\nClassification Report:\n")
     print(classification_report(y_test, preds, zero_division=0))
 
+    # Keep numeric confusion matrix values for machine-readable export.
     cm = confusion_matrix(y_test, preds, labels=labels_sorted)
 
     disp = ConfusionMatrixDisplay.from_predictions(
         y_test, preds, display_labels=labels_sorted
     )
+    # Save image artifact for quick visual inspection outside terminal output.
     disp.figure_.savefig(models_dir / "confusion_matrix.png", bbox_inches="tight")
 
     joblib.dump(best_pipeline, models_dir / "news_topic_model.joblib")
 
+    # Export structured metrics for CLI summaries and future comparisons.
     metrics_payload = {
         "selected_model": best_model_name,
         "accuracy": round(float(accuracy), 4),
