@@ -21,6 +21,7 @@ This project trains a multi-class text classifier for news topics using TF-IDF a
 - src/preprocess.py: text cleaning helpers
 - src/train.py: model comparison, training, and artifact export
 - src/predict.py: single-text and batch CSV prediction
+- src/metrics_summary.py: compact evaluation report from metrics.json
 - tests/test_preprocess.py: unit tests for preprocessing
 - tests/test_pipeline.py: integration tests for train and predict
 
@@ -59,6 +60,18 @@ Batch CSV:
 ```powershell
 python src/predict.py --input-csv data/sample_news.csv
 python src/predict.py --input-csv data/sample_news.csv --output-csv data/sample_news_predictions.csv
+```
+
+## Metrics Summary
+
+```powershell
+python src/metrics_summary.py
+```
+
+Optional custom metrics path:
+
+```powershell
+python src/metrics_summary.py --metrics models/metrics.json
 ```
 
 ## Run Tests

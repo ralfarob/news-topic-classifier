@@ -114,3 +114,32 @@ def test_predict_batch_from_csv() -> None:
             input_path.unlink()
         if output_path.exists():
             output_path.unlink()
+
+
+def test_metrics_summary_cli() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    metrics_path = repo_root / "models" / "metrics.json"
+
+    if not metrics_path.exists():
+        train_result = subprocess.run(
+            [sys.executable, "src/train.py"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert train_result.returncode == 0, train_result.stderr
+
+    result = subprocess.run(
+        [sys.executable, "src/metrics_summary.py"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Evaluation Summary" in result.stdout
+    assert "Selected model:" in result.stdout
+    assert "CV mean accuracy by model:" in result.stdout
+    assert "Per-class metrics:" in result.stdout
