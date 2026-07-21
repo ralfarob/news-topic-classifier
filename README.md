@@ -18,6 +18,7 @@ This project trains a multi-class text classifier for news topics using TF-IDF a
 
 ## Project Structure
 - data/sample_news.csv: sample labeled dataset (text, label)
+- src/data_quality_check.py: dataset validator (class balance and duplicate checks)
 - src/preprocess.py: text cleaning helpers
 - src/train.py: model comparison, training, and artifact export
 - src/predict.py: single-text and batch CSV prediction
@@ -39,6 +40,10 @@ pip install -r requirements.txt
 python src/train.py
 ```
 
+Training now runs a fail-fast data quality check first and stops if it finds:
+- class imbalance above threshold
+- duplicate texts (case/space-insensitive)
+
 Expected output:
 - cross-validation comparison per model
 - selected best model
@@ -46,6 +51,18 @@ Expected output:
 - models/news_topic_model.joblib
 - models/confusion_matrix.png
 - models/metrics.json
+
+## Data Quality Check
+
+```powershell
+python src/data_quality_check.py
+```
+
+Optional custom input and threshold:
+
+```powershell
+python src/data_quality_check.py --input-csv data/sample_news.csv --max-imbalance-ratio 2.0
+```
 
 ## Predict
 

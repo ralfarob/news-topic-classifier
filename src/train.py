@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
+from data_quality_check import validate_training_data
 from preprocess import clean_batch
 
 
@@ -46,6 +47,11 @@ def main() -> None:
     df = pd.read_csv(data_path)
     if not {"text", "label"}.issubset(df.columns):
         raise ValueError("CSV must include 'text' and 'label' columns")
+
+    quality_issues = validate_training_data(df)
+    if quality_issues:
+        issue_list = "\n".join(f"- {issue}" for issue in quality_issues)
+        raise ValueError(f"Dataset quality check failed:\n{issue_list}")
 
     x = clean_batch(df["text"].astype(str).tolist())
     y = df["label"].astype(str)

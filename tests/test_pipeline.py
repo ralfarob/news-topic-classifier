@@ -144,3 +144,52 @@ def test_metrics_summary_cli() -> None:
     assert "CV mean accuracy by model:" in result.stdout
     assert "Per-class metrics:" in result.stdout
     assert "Confusion matrix (rows=true, cols=pred):" in result.stdout
+
+
+def test_data_quality_check_cli_passes_for_sample_data() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, "src/data_quality_check.py"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Data quality check passed." in result.stdout
+
+
+def test_data_quality_check_cli_fails_for_imbalanced_and_duplicate_data() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    input_path = repo_root / "tests" / "tmp_bad_quality_news.csv"
+    input_path.write_text(
+        "text,label\n"
+        "same headline,business\n"
+        "same headline,business\n"
+        "market update,business\n"
+        "sports brief,sports\n",
+        encoding="utf-8",
+    )
+
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "src/data_quality_check.py",
+                "--input-csv",
+                str(input_path),
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode != 0
+        assert "Data quality check failed:" in result.stdout
+        assert "Class imbalance too high:" in result.stdout
+        assert "duplicate text rows" in result.stdout
+    finally:
+        if input_path.exists():
+            input_path.unlink()
